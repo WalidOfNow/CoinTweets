@@ -83,11 +83,24 @@ if __name__ == '__main__':
     # mainly was for testing
     client.drop_database('test_db')
 
-    # store our csv file in mongo
-    tweets = pd.read_csv('bitcoin-tweets.csv')
-    tweets['fetched'] = False
-    tweets['processed'] = False
-    data_json = json.loads(tweets.to_json(orient='records'))
+    # before launching our web app, we want to store our file in mongo
+    #tweets = pd.read_csv('bitcoin-tweets.csv')
+
+    tweets = pd.read_json('bitcoin-03.json', lines=True)
+
+    # we only want tweets that are in english
+    # and are original tweets! We don't care about re-tweets
+    tweets = tweets[ (tweets['lang'] == 'en') & (pd.isnull(tweets['retweeted_status'])) ]
+
+    # only take out what we need
+    tweets_cleaned = tweets[['created_at', 'text', 'id']]
+
+    # for the web-app when people vote on the sentiment
+    tweets_cleaned['fetched'] = False
+    tweets_cleaned['processed'] = False
+
+    # store to our db
+    data_json = json.loads(tweets_cleaned.to_json(orient='records'))
     db.tweets.insert(data_json)
 
     # start our app
