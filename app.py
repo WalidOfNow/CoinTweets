@@ -8,6 +8,7 @@ import json
 import bson
 import glob
 
+import string
 
 import pandas as pd
 
@@ -79,6 +80,23 @@ def vote_tweet():
     return redirect(url_for("index"))
 
 
+
+def sanitize_tweets(data):
+    tweet = ""
+    if (pd.isnull(data['extended_tweet'])):
+        tweet = data['text']
+
+    else:
+        tweet = data['extended_tweet']['full_text']
+
+    # get rid of newline chars
+    tweet = tweet.strip()
+    # cool trick to get rid of spaces
+    tweet = ' '.join(tweet.split())
+    # convert to lowercase
+    tweet = tweet.lower()
+    return tweet
+
 if __name__ == '__main__':
 
     # drops our current DB
@@ -86,15 +104,18 @@ if __name__ == '__main__':
     client.drop_database('test_db')
 
     # before launching our web app, we want to store our file in mongo
-    #tweets = pd.read_csv('bitcoin-tweets.csv')
+
     allFiles = glob.glob("bitcoin-*.json")
-    tmp_storage = []
+
     for tweetsFile in allFiles:
         tweets = pd.read_json(tweetsFile, lines=True)
 
         # we only want tweets that are in english
         # and are original tweets! We don't care about re-tweets
         tweets = tweets[ (tweets['lang'] == 'en') & (pd.isnull(tweets['retweeted_status'])) ]
+
+        # clean all our tweet text
+        tweets['text'] = tweets.apply(sanitize_tweets, axis=1)
 
         # only take out what we need
         tweets_cleaned = tweets[['created_at', 'text', 'id']]
