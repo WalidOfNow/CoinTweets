@@ -6,6 +6,8 @@ from flask import redirect
 
 import json
 import bson
+import glob
+
 
 import pandas as pd
 
@@ -85,24 +87,26 @@ if __name__ == '__main__':
 
     # before launching our web app, we want to store our file in mongo
     #tweets = pd.read_csv('bitcoin-tweets.csv')
+    allFiles = glob.glob("bitcoin-*.json")
+    tmp_storage = []
+    for tweetsFile in allFiles:
+        tweets = pd.read_json(tweetsFile, lines=True)
 
-    tweets = pd.read_json('bitcoin-03.json', lines=True)
+        # we only want tweets that are in english
+        # and are original tweets! We don't care about re-tweets
+        tweets = tweets[ (tweets['lang'] == 'en') & (pd.isnull(tweets['retweeted_status'])) ]
 
-    # we only want tweets that are in english
-    # and are original tweets! We don't care about re-tweets
-    tweets = tweets[ (tweets['lang'] == 'en') & (pd.isnull(tweets['retweeted_status'])) ]
+        # only take out what we need
+        tweets_cleaned = tweets[['created_at', 'text', 'id']]
 
-    # only take out what we need
-    tweets_cleaned = tweets[['created_at', 'text', 'id']]
+        # for the web-app when people vote on the sentiment
+        tweets_cleaned['fetched'] = False
+        tweets_cleaned['processed'] = False
 
-    # for the web-app when people vote on the sentiment
-    tweets_cleaned['fetched'] = False
-    tweets_cleaned['processed'] = False
-
-    # store to our db
-    data_json = json.loads(tweets_cleaned.to_json(orient='records'))
-    db.tweets.insert(data_json)
-
+        # store to our db
+        data_json = json.loads(tweets_cleaned.to_json(orient='records'))
+        db.tweets.insert(data_json)
+        print(tweetsFile + " has been processed")
     # start our app
     app.run()
 
