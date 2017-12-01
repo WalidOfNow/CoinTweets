@@ -7,6 +7,7 @@ from flask import redirect
 import json
 import bson
 import glob
+import datetime
 
 import string
 
@@ -24,14 +25,27 @@ client = MongoClient()
 db = client.test_db
 
 def get_next_tweet():
-    return db.tweets.find_one_and_update(
-        {'fetched' : False, 'processed' : False},
-        {'$set' : {'fetched' : True}}
+    tw = db.tweets.aggregate([
+        { '$sample' : { 'size' : 1} } ,
+    ])
+
+    tw = list(tw)[0]
+    db.tweets.update(
+        {'_id': bson.ObjectId(oid=str(tw['_id']))},
+        {'$set' : {
+            'fetched':True
+        }}
     )
+    return tw
 
 @app.route('/')
 def index():
-    return render_template('index.html', tweet=get_next_tweet())
+    t = get_next_tweet()
+    t['created_at']= datetime.datetime.fromtimestamp(
+        int(t['created_at'])/1000
+    ).strftime('%Y-%m-%d %H:%M:%S')
+
+    return render_template('index.html', tweet=t)
 
 
 # when a user exits the web page or clicks a link, we want to reset
@@ -39,6 +53,7 @@ def index():
 @app.route('/status', methods=['POST'])
 def vote_tweet_status():
     json_data = request.get_json()
+    print(json_data)
     tweet_id = json_data['tweet_id']
 
     results = db.tweets.find_one(
@@ -101,33 +116,33 @@ if __name__ == '__main__':
 
     # drops our current DB
     # mainly was for testing
-    client.drop_database('test_db')
-
-    # before launching our web app, we want to store our file in mongo
-
-    allFiles = glob.glob("bitcoin-*.json")
-
-    for tweetsFile in allFiles:
-        tweets = pd.read_json(tweetsFile, lines=True)
-
-        # we only want tweets that are in english
-        # and are original tweets! We don't care about re-tweets
-        tweets = tweets[ (tweets['lang'] == 'en') & (pd.isnull(tweets['retweeted_status'])) ]
-
-        # clean all our tweet text
-        tweets['text'] = tweets.apply(sanitize_tweets, axis=1)
-
-        # only take out what we need
-        tweets_cleaned = tweets[['created_at', 'text', 'id']]
-
-        # for the web-app when people vote on the sentiment
-        tweets_cleaned['fetched'] = False
-        tweets_cleaned['processed'] = False
-
-        # store to our db
-        data_json = json.loads(tweets_cleaned.to_json(orient='records'))
-        db.tweets.insert(data_json)
-        print(tweetsFile + " has been processed")
-    # start our app
+    # client.drop_database('test_db')
+    #
+    # # before launching our web app, we want to store our file in mongo
+    #
+    # allFiles = glob.glob("bitcoin-*.json")
+    #
+    # for tweetsFile in allFiles:
+    #     tweets = pd.read_json(tweetsFile, lines=True)
+    #
+    #     # we only want tweets that are in english
+    #     # and are original tweets! We don't care about re-tweets
+    #     tweets = tweets[ (tweets['lang'] == 'en') & (pd.isnull(tweets['retweeted_status'])) ]
+    #
+    #     # clean all our tweet text
+    #     tweets['text'] = tweets.apply(sanitize_tweets, axis=1)
+    #
+    #     # only take out what we need
+    #     tweets_cleaned = tweets[['created_at', 'text', 'id']]
+    #
+    #     # for the web-app when people vote on the sentiment
+    #     tweets_cleaned['fetched'] = False
+    #     tweets_cleaned['processed'] = False
+    #
+    #     # store to our db
+    #     data_json = json.loads(tweets_cleaned.to_json(orient='records'))
+    #     db.tweets.insert(data_json)
+    #     print(tweetsFile + " has been processed")
+    # # start our app
     app.run()
 
