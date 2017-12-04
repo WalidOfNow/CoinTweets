@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Twitter Status Voter</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+        <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+
+        <script type = "text/javascript">
+        $(document).ready(function() {
+
+            $('form#vote-pos').submit(function(event) {
+
+                console.log(JSON.stringify(event));
+                all_data = { "tweet_id" : '{{ tweet["_id"] }}', "sentiment" : "positive" }
+
+                $.ajax ({
+                    url: 'http://127.0.0.1:5000/vote',
+                    type: 'POST',
+                    data: JSON.stringify(all_data),
+                    contentType: "application/json; charset=utf-8",
+                    success: function(data)     {
+                        console.log(data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.log(xhr, status, error)
+                    },
+                })
+
+            })
+
+            $('form#vote-neut').submit(function(event) {
+
+                console.log(JSON.stringify(event));
+                all_data = { "tweet_id" : '{{ tweet["_id"] }}', "sentiment" : "neutral" }
+
+                $.ajax ({
+                    url: 'http://127.0.0.1:5000/vote',
+                    type: 'POST',
+                    data: JSON.stringify(all_data),
+                    contentType: "application/json; charset=utf-8",
+                    success: function(data)     {
+                        console.log(data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.log(xhr, status, error)
+                    },
+                })
+
+            })
+
+
+
+            $('form#vote-neg').submit(function(event) {
+
+                console.log(JSON.stringify(event));
+                all_data = { "tweet_id" : '{{ tweet["_id"] }}', "sentiment" : "negative" }
+
+                $.ajax ({
+                    url: 'http://127.0.0.1:5000/vote',
+                    type: 'POST',
+                    data: JSON.stringify(all_data),
+                    contentType: "application/json; charset=utf-8",
+                    success: function(data)     {
+                        console.log(data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.log(xhr, status, error)
+                    },
+                })
+
+            })
+
+            $( window ).unload(function() {
+                // send request to server to check processed status
+                console.log('got to here');
+                $.ajax ({
+                    url: 'http://127.0.0.1:5000/status',
+                    async: false,
+                    type: 'POST',
+                    data: JSON.stringify( {"tweet_id" : '{{ tweet["_id"] }}' }),
+                    contentType: "application/json; charset=utf-8",
+                    success: function(data)     {
+                        console.log(data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.log(xhr, status, error)
+                    },
+                })
+            });
+
+
+        })
+
+        </script>
+        <style>
+        body,h5 {font-family: "Raleway", sans-serif}
+        body, html {
+            height: 100%;
+            text-align: center;
+        }
+        .bgimg {
+            background-image: url('https://ak7.picdn.net/shutterstock/videos/12628997/thumb/3.jpg');
+            min-height: 100%;
+            background-position: center;
+            background-size: cover;
+        }
+
+        form {
+            display: inline-block; //Or display: inline;
+        }
+        .cool-btn {
+            background: #0066A2;
+
+            color: white;
+
+            border-style: outset;
+
+            border-color: #0066A2;
+
+            height: 50px;
+
+            width: 100px;
+
+            font: bold 15px arial, sans-serif;
+
+            text-shadow:none;
+
+        }
+
+        </style>
+
+
+    </head>
+
+
+    <body>
+
+        <div class="bgimg w3-display-container w3-animate-opacity w3-text-white">
+          <div class="w3-display-topleft w3-padding-large w3-xlarge">
+
+          </div>
+          <div class="w3-display-middle">
+            <h5 class="w3-jumbo w3-animate-top"> {{ tweet['text'] }}  </h5>
+              <p>{{tweet['created_at']}} </p>
+            <hr class="w3-border-grey" style="margin:auto;width:40%">
+            <p class="w3-large w3-center">
+
+                <form id="vote-pos" method="GET">
+                    <input class="cool-btn" type="submit" value="Positive">
+                </form>
+
+                <form id="vote-neut" method="GET">
+                    <input class="cool-btn" type="submit" value="Neutral">
+                </form>
+
+                <form id="vote-neg" method="GET">
+                    <input class="cool-btn" type="submit" value="Negative">
+                </form>
+
+            </p>
+
+          </div>
+
+        </div>
+
+    </body>
+</html>
