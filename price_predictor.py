@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[68]:
+# In[48]:
 
 import pandas as pd
 import numpy as np
@@ -19,7 +19,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
-# In[71]:
+# In[49]:
 
 tokenizer = TweetTokenizer()
 LabeledSentence = gensim.models.doc2vec.LabeledSentence 
@@ -56,41 +56,57 @@ def buildWordVector(tokens, size):
     return vec
 
 
-# In[74]:
+# In[59]:
 
 n_dim = 200
-tweets = pd.read_csv('exported_tweets.csv')
+trained_tweets = pd.read_csv('exported_tweets.csv')
+training_data = pd.read_csv('bitcoin-train-sentiments.csv')
+non_trained_tweets = pd.read_csv('non_trained_tweets.csv')
+
 prices = pd.read_csv('prices.csv')
-tweets['created_at'] = tweets['created_at'].map(lambda x: str(x)[:-3])
-tweets['timestamp'] = tweets['created_at'].apply(parse_dates)
+non_trained_tweets['created_at'] = non_trained_tweets['created_at'].map(lambda x: str(x)[:-3])
+non_trained_tweets['timestamp'] = non_trained_tweets['created_at'].apply(parse_dates)
 
-data = tweets.merge(prices,on='timestamp',how='left')
-data['tokens'] = data['text'].map(tokenize) 
+data = non_trained_tweets.merge(prices,on='timestamp',how='left')
+#data['tokens'] = data['text'].map(tokenize) 
 #final_data = postprocess(data)
+training_data = training_data.append(tweets)
+training_data['tokens'] = training_data['text'].map(tokenize) 
+data['tokens'] = data['text'].map(tokenize)
+
+training_data
 
 
+# In[60]:
 
-# In[75]:
-
-x_train, x_test, y_train, y_test = train_test_split(np.array(data.tokens),
-                                                    np.array(data.sentiment), test_size=0.2)
+training_data
 
 
-# In[76]:
+# In[89]:
+
+#x_train, x_test, y_train, y_test = train_test_split(np.array(training_data.tokens),
+#                                                    np.array(training_data.sentiment), test_size=0.2)
+x_train = training_data.tokens
+y_train = training_data.sentiment
+
+x_test = data.tokens
+
+
+# In[90]:
 
 tweet_w2v = Word2Vec(size=n_dim, min_count=10)
 tweet_w2v.build_vocab(x_train)
 tweet_w2v.train(x_train, total_examples=tweet_w2v.corpus_count, epochs=tweet_w2v.iter)
 
 
-# In[77]:
+# In[91]:
 
 vectorizer = TfidfVectorizer(analyzer=lambda x: x, min_df=10)
 matrix = vectorizer.fit_transform(x_train)
 tfidf = dict(zip(vectorizer.get_feature_names(), vectorizer.idf_))
 
 
-# In[79]:
+# In[94]:
 
 from sklearn.preprocessing import scale
 train_vecs_w2v = np.concatenate([buildWordVector(z, n_dim) for z in x_train])
@@ -100,14 +116,36 @@ test_vecs_w2v = np.concatenate([buildWordVector(z, n_dim) for z in x_test])
 test_vecs_w2v = scale(test_vecs_w2v)
 
 
-# In[85]:
+# In[106]:
+
+# model = Sequential()
+# model.add(Dense(32, activation='relu', input_dim=200))
+# model.add(Dense(1, activation='sigmoid'))
+# model.compile(optimizer='rmsprop',
+#               loss='binary_crossentropy',
+#               metrics=['accuracy'])
+
+# model.fit(train_vecs_w2v, y_train, epochs=9, batch_size=32, verbose=2)
 
 #now we have training and testing datasets we can apply SVC, Guassian..etc
 from sklearn.svm import SVC
-svc_model = SVC(kernel='rbf', C=20, gamma=2)
+svc_model = SVC(kernel='linear', C=200)
 svc_model.fit(train_vecs_w2v, y_train)
-score = svc_model.score(test_vecs_w2v, y_test)
-score
+sentiment_predictions = svc_model.predict(test_vecs_w2v)
+
+
+
+
+
+# In[107]:
+
+data['sentiment'] = sentiment_predictions
+data[data['sentiment'] == -1]
+
+
+# In[108]:
+
+data.to_csv('predicted_sentiments.csv', index=False)
 
 
 # In[ ]:
