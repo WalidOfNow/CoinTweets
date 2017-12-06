@@ -4,9 +4,8 @@ from datetime import datetime
 from gensim.models import Word2Vec
 from nltk.tokenize import TweetTokenizer 
 import gensim
+from scipy import stats
 
-
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import SVC
 from sklearn.preprocessing import scale
 from sklearn.naive_bayes import GaussianNB
@@ -16,7 +15,6 @@ import matplotlib.patches as mpatches
 
 
 tokenizer = TweetTokenizer()
-LabeledSentence = gensim.models.doc2vec.LabeledSentence
 
 def parse_dates(posix_time):
     return datetime.utcfromtimestamp(int(posix_time)).strftime('%Y-%m-%dT%H')
@@ -26,24 +24,24 @@ def tokenize(tweet):
         tokens = tokenizer.tokenize(tweet)
         return tokens
     except:
-        return 'NC'
+        return 'NaW' #not a word
     
 def postprocess(data):
     data['tokens'] = data['text'].map(tokenize) 
-    data = data[data.tokens != 'NC']
+    data = data[data.tokens != 'NaW']
     data.reset_index(inplace=True)
     data.drop('index', inplace=True, axis=1)
     return data
 
 
-
+#https://ahmedbesbes.com/sentiment-analysis-on-twitter-using-word2vec-and-keras.html
 
 def buildWordVector(tokens, size):
     vec = np.zeros(size).reshape((1, size))
     count = 0.
     for word in tokens:
         try:
-            vec += tweet_w2v[word].reshape((1, size)) * tfidf[word]
+            vec += tweet_w2v[word].reshape((1, size)) * tfidf[word] #give frequent words higher weight
             count += 1.
         except KeyError: # handling the case where the token is not
                          # in the corpus. useful for testing.
@@ -52,6 +50,16 @@ def buildWordVector(tokens, size):
         vec /= count
     return vec
 
+
+def get_price_change(data):
+
+    # if the price change was within 0.1% of the original price, then we treat it as if no price change happened
+    if abs(data['price_next']-data['price']) <= data['price']*0.001:
+        return 0
+    if data['price_next']-data['price'] > 0:
+        return 1
+    else:
+        return -1
 
 print("reading data and building dataframes...")
 n_dim = 200
@@ -78,21 +86,19 @@ x_test = data.tokens
 
 
 
-print("training word2vec model...")
-
+print("training word2vec model")
 tweet_w2v = Word2Vec(size=n_dim, min_count=10)
 tweet_w2v.build_vocab(x_train)
 tweet_w2v.train(x_train, total_examples=tweet_w2v.corpus_count, epochs=tweet_w2v.iter)
 
 
-print("fitting data to vectorizer...")
-
+# fit the data to Victorize to priorize frequent words
 vectorizer = TfidfVectorizer(analyzer=lambda x: x, min_df=10)
 matrix = vectorizer.fit_transform(x_train)
 tfidf = dict(zip(vectorizer.get_feature_names(), vectorizer.idf_))
 
 
-print("building word vectors for model...")
+print("building word vectors for the prediction model")
 
 train_vecs_w2v = np.concatenate([buildWordVector(z, n_dim) for z in x_train])
 train_vecs_w2v = scale(train_vecs_w2v)
@@ -116,7 +122,6 @@ predicted_sentiments = data
 print("aggregating data and generating graph(s)...")
 
 
-from scipy import stats
 
 group = predicted_sentiments.groupby('timestamp')
 
@@ -141,15 +146,6 @@ def color_it(sent):
 
 
 
-def get_price_change(data):
-
-    # if the price change was within 0.1% of the original price, then we treat it as if no price change happened
-    if abs(data['price_next']-data['price']) <= data['price']*0.001:
-        return 0
-    if data['price_next']-data['price'] > 0:
-        return 1
-    else:
-        return -1
 
 #
 final_df['price_next'] = final_df['price'].shift(-1)
