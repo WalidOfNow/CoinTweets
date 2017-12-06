@@ -1,76 +1,87 @@
 text,sentiment
-"bitcoin is Bearish",-1
-"bitcoin is bullish",1
-"FUD bitcoin",-1
-"FOMO Bitcoin",1
+"is Bearish",-1
+"is bullish",1
+"FUD",-1
+"FOMO",1
 "ATH",1
+"increased adoption",1
+"decreased adoption",1
+"more adopters",1
+"financial investor",1
 "All Time High",1
-"Bitcoin Spike",1
-"Bitcoin Drop",-1
-"Bitcoin Dropping",-1
-"Bitcoin Tank",-1
-"bitcoin surges",1
-"bitcoin shor",-1
-"bitcoin long",1
-"bitcoin sell wall",-1
-"bitcoin buy wall",1
-"altcoins are taking over bitcoin",-1
-"killing bitcoin",-1
-"regulations on bitcoin",-1
-"bad news for bitcoin",-1
-"bitcoin dump",-1
-"bitcoin dumpping",-1
-"bitcoin is pumping",1
-"bitcoin FUDster",-1
-"bitcoin Pump And Dump",-1
-"bitcoin low ROI",-1
-"bitcoin high ROI",1
-"bitcoin mining profitable",1
-"bitcoin fork scam",-1
-"bitcoin is scam",-1
-"bitcoin is bubble",-1
-"bitcoin hacked",-1
-"bitcoin wallets hacked",-1
-"bitcoin stolen",-1
-"bitcoin futures",1
-"bitcoin hype",1
-"bitcoin flipping",1
-"bitcoin hodl",1
-"bitcoin moon",1
-"bitcoin lambo",1
-"bitcoin lambos",1
-"bitcoin mooning",1
-"bitcoin up",1
-"bitcoin keep hodling",1
-"bitcoin congrats",1
-"bitcoin going up",1
-"bitcoin Mining Difficulty increased",-1
-"bitcoin forks are driving price down",-1
-"altcoins are driving bitcoin price down",-1
-"bitcoin DDoS",-1
-"bitcoin Hardfork is bad",-1
-"bitcoin shorting",-1
-"bitcoin longing",1
+"Spike",1
+"rally",1
+"skyrocket",1
+"to the sky",1
+"to the moon",1
+"mooning",1
+"Drop",-1
+"Dropping",-1
+"Tank",-1
+"surges",1
+"short",-1
+"long",1
+"sell wall",-1
+"buy wall",1
+"altcoins are taking over",-1
+"killing",-1
+"regulations on",-1
+"detain",-1
+"arrest",-1
+"bad news for",-1
+"dump",-1
+"dumping",-1
+"is pumping",1
+"FUDster",-1
+"Pump And Dump",-1
+"low ROI",-1
+"high ROI",1
+"mining profitable",1
+"fork scam",-1
+"is scam",-1
+"is bubble",-1
+"hacked",-1
+"wallets hacked",-1
+"stolen",-1
+"futures",1
+"hype",1
+"flipping",1
+"hodl",1
+"moon",1
+"lambo",1
+"lambos",1
+"mooning",1
+"up",1
+"keep hodling",1
+"congrats",1
+"going up",1
+"Mining Difficulty increased",-1
+"forks are driving price down",-1
+"altcoins are driving  price down",-1
+"DDoS",-1
+"Hardfork is bad",-1
+"shorting",-1
+"longing",1
 "whales controlling the market",-1
-"bitcoin dominance lower",-1
-"bitcoin dominance decreased",-1
-"bitcoin dominance increased",1
-"goverments regulations on bitcoin",-1
-"goverments shut down bitcoin",-1
-"bitcoin exchange was shut down",-1
-"bitcoin exchange closing down",-1
-"buy bitcoin",1
-"sell bitcoin",1
-"start investing in bitcoin",1
-"new investors to bitcoin",1
-"new investments bitcoin",1
-"bitcoin lose value",-1
-"bitcoin value increase",1
-"bitcoin value drops",-1
-"bitcoin price increase",1
-"bitcoin price decrease",-1
-"bitcoin price drops",-1
-"bitcoin price shooting up",1
-"bitcoin price shoot up",1
-"bitcoin is the future",1
-"bitcoin is fraud",-1
+"dominance lower",-1
+"dominance decreased",-1
+"dominance increased",1
+"governments regulations",-1
+"governments shut down",-1
+"exchange was shut down",-1
+"exchange closing down",-1
+"buy",1
+"sell",-1
+"start investing in",1
+"new investors to",1
+"new investments",1
+"lose value",-1
+"value increase",1
+"value drops",-1
+"price increase",1
+"price decrease",-1
+"price drops",-1
+"price shooting up",1
+"price shoot up",1
+"is the future",1
+"is fraud",-1
