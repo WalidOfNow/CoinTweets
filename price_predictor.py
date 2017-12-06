@@ -149,27 +149,27 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 
-model = SVC(kernel='linear', C=200)
+#model = SVC(kernel='linear', C=200)
 
 #model = KNeighborsClassifier(n_neighbors = 100)
 #model = GaussianNB()
 
 
-print("fitting data to svc model...")
+#print("fitting data to svc model...")
 
-model.fit(train_vecs_w2v, y_train)
-sentiment_predictions = model.predict(test_vecs_w2v)
+#model.fit(train_vecs_w2v, y_train)
+#sentiment_predictions = model.predict(test_vecs_w2v)
 
 
 
 # In[107]:
 
-data['sentiment'] = sentiment_predictions
+#data['sentiment'] = sentiment_predictions
 
-predicted_sentiments = data
+#predicted_sentiments = data
 #print(data[data['sentiment'] == -1])
 
-#predicted_sentiments = pd.read_csv('not_the_worst_predicted_sentiments.csv')
+predicted_sentiments = pd.read_csv('not_the_worst_predicted_sentiments.csv')
 
 #predicted_sentiments['created_at'] = pd.to_datetime(predicted_sentiments['created_at'], unit='s')
 #print(predicted_sentiments)
@@ -202,11 +202,46 @@ def color_it(sent):
     else:
         return 'R'
 
-ax.scatter(final_df['timestamp'], final_df['price'], c=final_df['sentiment'].apply(color_it), s=3)
-start, end = ax.get_xlim()
-ax.xaxis.set_ticks(np.arange(start, end, 100))
-plt.xticks(rotation=40)
-plt.show()
+
+
+def get_price_change(data):
+    #data 2 = curr price
+    #data 5 = next price
+    if  abs(data[5]-data[2]) <= (data[2] * 0.005):
+        return 0
+    elif data[5]-data[2] > 0:
+        return 1
+    else:
+        return -1
+
+
+final_df['price_next'] = final_df['price'].shift(-1)
+final_df = final_df.dropna()
+final_df['price-change'] = final_df.apply(get_price_change, axis=1)
+
+final_df['timestamp'] = pd.to_datetime(final_df['timestamp']).values.astype(np.int64)
+final_df['volume'] = final_df['volume'].values.astype(np.int64)
+final_df['price_next'] = final_df['price_next'].values.astype(np.int64)
+
+print(final_df)
+
+x2_train, x2_test, y2_train, y2_test = train_test_split(final_df[['timestamp', 'sentiment', 'volume', 'num_tweets']],
+                                                    final_df['price-change'])
+
+#model2 = SVC(kernel='linear', C=0.01)
+model2 = KNeighborsClassifier(n_neighbors = 100)
+#model2 = GaussianNB()
+model2.fit(x2_train, y2_train)
+print(model2.score(x2_test, y2_test))
+
+
+
+
+#ax.scatter(final_df['timestamp'], final_df['price'], c=final_df['sentiment'].apply(color_it), s=3)
+# start, end = ax.get_xlim()
+# ax.xaxis.set_ticks(np.arange(start, end, 100))
+# plt.xticks(rotation=40)
+# plt.show()
 
 
 
@@ -218,6 +253,4 @@ plt.show()
 
 
 # In[ ]:
-
-
 
