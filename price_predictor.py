@@ -9,6 +9,8 @@ from datetime import datetime
 from gensim.models import Word2Vec
 from nltk.tokenize import TweetTokenizer 
 import gensim
+import enchant
+
 
 
 from sklearn import linear_model
@@ -19,10 +21,13 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
+import matplotlib.pyplot as plt
+
 # In[49]:
 
 tokenizer = TweetTokenizer()
-LabeledSentence = gensim.models.doc2vec.LabeledSentence 
+LabeledSentence = gensim.models.doc2vec.LabeledSentence
+d = enchant.Dict("en_US")
 
 def parse_dates(posix_time):
     return datetime.utcfromtimestamp(int(posix_time)).strftime('%Y-%m-%dT%H')
@@ -30,6 +35,10 @@ def parse_dates(posix_time):
 def tokenize(tweet):
     try:
         tokens = tokenizer.tokenize(tweet)
+        for word in tokens:
+            if not d.check(word):
+                tokens.remove(word)
+
         return tokens
     except:
         return 'NC'
@@ -58,10 +67,11 @@ def buildWordVector(tokens, size):
 
 # In[59]:
 
+print("reading data and building dataframes...")
 n_dim = 200
 trained_tweets = pd.read_csv('exported_tweets.csv')
 training_data = pd.read_csv('bitcoin-train-sentiments.csv')
-non_trained_tweets = pd.read_csv('non_trained_tweets.csv')
+non_trained_tweets = pd.read_csv('exported_tweets_new.csv')
 
 prices = pd.read_csv('prices.csv')
 non_trained_tweets['created_at'] = non_trained_tweets['created_at'].map(lambda x: str(x)[:-3])
@@ -70,22 +80,24 @@ non_trained_tweets['timestamp'] = non_trained_tweets['created_at'].apply(parse_d
 data = non_trained_tweets.merge(prices,on='timestamp',how='left')
 #data['tokens'] = data['text'].map(tokenize) 
 #final_data = postprocess(data)
-training_data = training_data.append(tweets)
+training_data = training_data.append(trained_tweets)
 training_data['tokens'] = training_data['text'].map(tokenize) 
 data['tokens'] = data['text'].map(tokenize)
 
-training_data
+#training_data
 
 
 # In[60]:
 
-training_data
+#training_data
 
 
 # In[89]:
 
 #x_train, x_test, y_train, y_test = train_test_split(np.array(training_data.tokens),
 #                                                    np.array(training_data.sentiment), test_size=0.2)
+
+
 x_train = training_data.tokens
 y_train = training_data.sentiment
 
@@ -94,19 +106,21 @@ x_test = data.tokens
 
 # In[90]:
 
+print("training word2vec model...")
+
 tweet_w2v = Word2Vec(size=n_dim, min_count=10)
 tweet_w2v.build_vocab(x_train)
 tweet_w2v.train(x_train, total_examples=tweet_w2v.corpus_count, epochs=tweet_w2v.iter)
 
 
-# In[91]:
+print("fitting data to vectorizer...")
 
 vectorizer = TfidfVectorizer(analyzer=lambda x: x, min_df=10)
 matrix = vectorizer.fit_transform(x_train)
 tfidf = dict(zip(vectorizer.get_feature_names(), vectorizer.idf_))
 
 
-# In[94]:
+print("building word vectors for model...")
 
 from sklearn.preprocessing import scale
 train_vecs_w2v = np.concatenate([buildWordVector(z, n_dim) for z in x_train])
@@ -117,35 +131,90 @@ test_vecs_w2v = scale(test_vecs_w2v)
 
 
 # In[106]:
-
 # model = Sequential()
 # model.add(Dense(32, activation='relu', input_dim=200))
 # model.add(Dense(1, activation='sigmoid'))
 # model.compile(optimizer='rmsprop',
 #               loss='binary_crossentropy',
 #               metrics=['accuracy'])
-
+#
 # model.fit(train_vecs_w2v, y_train, epochs=9, batch_size=32, verbose=2)
 
+
+
+
 #now we have training and testing datasets we can apply SVC, Guassian..etc
+
 from sklearn.svm import SVC
-svc_model = SVC(kernel='linear', C=200)
-svc_model.fit(train_vecs_w2v, y_train)
-sentiment_predictions = svc_model.predict(test_vecs_w2v)
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+
+model = SVC(kernel='linear', C=200)
+
+#model = KNeighborsClassifier(n_neighbors = 100)
+#model = GaussianNB()
 
 
+print("fitting data to svc model...")
+
+model.fit(train_vecs_w2v, y_train)
+sentiment_predictions = model.predict(test_vecs_w2v)
 
 
 
 # In[107]:
 
 data['sentiment'] = sentiment_predictions
-data[data['sentiment'] == -1]
+
+predicted_sentiments = data
+#print(data[data['sentiment'] == -1])
+
+#predicted_sentiments = pd.read_csv('not_the_worst_predicted_sentiments.csv')
+
+#predicted_sentiments['created_at'] = pd.to_datetime(predicted_sentiments['created_at'], unit='s')
+#print(predicted_sentiments)
+
+from scipy import stats
+
+#https://stackoverflow.com/questions/15222754/group-by-pandas-dataframe-and-select-most-common-string-factor
+group = predicted_sentiments.groupby('timestamp')
+
+ts = group['timestamp']
+
+sentiments = group['sentiment'].agg(lambda x: stats.mode(x)[0][0])
+price = group['price'].mean()
+vol = group['volume'].mean()
+num_tweets = group['text'].count()
+
+
+final_df = pd.DataFrame(data={'sentiment':sentiments, 'price':price, 'volume':vol, 'num_tweets':num_tweets})
+
+final_df = final_df.reset_index()
+
+
+fig, ax = plt.subplots()
+#ax.plot(final_df['timestamp'], final_df['price'])
+def color_it(sent):
+    if sent == 1:
+        return 'G'
+    elif sent==0:
+        return 'B'
+    else:
+        return 'R'
+
+ax.scatter(final_df['timestamp'], final_df['price'], c=final_df['sentiment'].apply(color_it), s=3)
+start, end = ax.get_xlim()
+ax.xaxis.set_ticks(np.arange(start, end, 100))
+plt.xticks(rotation=40)
+plt.show()
+
+
+
 
 
 # In[108]:
 
-data.to_csv('predicted_sentiments.csv', index=False)
+#data.to_csv('not_the_worst_predicted_sentiments.csv', index=False)
 
 
 # In[ ]:
