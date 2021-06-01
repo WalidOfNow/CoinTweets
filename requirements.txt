@@ -41,6 +41,6 @@ six==1.11.0
 sklearn==0.0
 smart-open==1.5.4
 tweepy==3.5.0
-urllib3==1.22
+urllib3==1.26.5
 vine==1.1.4
 Werkzeug==0.12.2
